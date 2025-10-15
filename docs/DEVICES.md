@@ -1,0 +1,1 @@
+# Supported Devices\n\n- ESP32 DevKit V1

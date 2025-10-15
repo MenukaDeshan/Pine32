@@ -1,0 +1,1 @@
+#!/bin/bash\necho 'Example command script for Pico-Pine'

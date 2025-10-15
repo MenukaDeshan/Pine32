@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PicoPine — Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      font-family: system-ui, Segoe UI, Roboto, Arial;
+      background: #0f1115;
+      color: #e5e7eb;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+    }
+    .sidebar {
+      width: 220px;
+      background: #111827;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 18px;
+      color: #06b6d4;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    .nav button {
+      background: none;
+      border: 0;
+      color: #9ca3af;
+      text-align: left;
+      padding: 10px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .nav button:hover {
+      background: #1f2937;
+      color: #fff;
+    }
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      background: #1f2937;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #374151;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      color: #06b6d4;
+    }
+    header button {
+      background: #06b6d4;
+      border: 0;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      color: #e5e7eb;
+    }
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #374151;
+    }
+    th { text-align: left; color: #9ca3af; }
+    tr:hover { background: #1f2937; }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">📡 PicoPine</div>
+    <div class="nav">
+      <button onclick="loadPage('scan')">Dashboard</button>
+      <button onclick="loadPage('clients')">PicoAP suite</button>
+      <button onclick="loadPage('attack')">Recon</button>
+      <button onclick="loadPage('settings')">Log</button>
+      <button onclick="logout()">Settings</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header>
+      <h1 id="pageTitle">Dashboard</h1>
+      <button onclick="scanNetworks()">Scan</button>
+    </header>
+
+    <div class="content" id="content">
+      <p>Welcome to <b>PicoPine</b>. Use the sidebar to navigate modules.</p>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    async function scanNetworks() {
+      document.getElementById('pageTitle').textContent = 'Wi-Fi Scan';
+      document.getElementById('content').innerHTML = '<p>Scanning…</p>';
+      try {
+        const res = await fetch('/scan');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          let html = '<table><tr><th>SSID</th><th>RSSI</th><th>Channel</th><th>MAC</th></tr>';
+          data.forEach(ap => {
+            html += `<tr><td>${ap.ssid}</td><td>${ap.rssi}</td><td>${ap.channel}</td><td>${ap.bssid}</td></tr>`;
+          });
+          html += '</table>';
+          document.getElementById('content').innerHTML = html;
+        } else {
+          document.getElementById('content').innerHTML = '<p>No networks found.</p>';
+        }
+      } catch (e) {
+        document.getElementById('content').innerHTML = '<p>Error scanning: ' + e + '</p>';
+      }
+    }
+
+    function loadPage(name) {
+      document.getElementById('pageTitle').textContent = name.charAt(0).toUpperCase() + name.slice(1);
+      document.getElementById('content').innerHTML = `<p>Loading ${name} module...</p>`;
+      // Later, you can load partial HTML or API data here.
+    }
+
+    function logout() {
+      fetch('/logout', {method: 'POST'}).then(()=>location.href='/www/login.html');
+    }
+  </script>
+</body>
+</html>
