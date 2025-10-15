@@ -8,24 +8,20 @@ It is designed for WiFi auditing, pentesting, and network experiments.
 
 > ⚠️ **Work in Progress** — development is ongoing.
 
+## Password
+The password for `Pine32` is `disconnected`
+
 ## Features (Planned)
-- WiFi scanning and monitoring  
-- Rogue access point creation  
-- Packet capture and analysis  
-- Web-based dashboard for management  
+- WiFi scanning and monitoring   
 
-## Hardware
-- ESP32 microcontroller  
-- Optional OLED / LCD screen  
-- Power via USB or battery  
+## About this Project
+This firmware allows you to easily perform a variety of actions to test 802.11 networks using an ESP32. It's also a great project for learning about WiFi, microcontrollers, Arduino, hacking and electronics/programming in general.
 
-## Software
-- Built on [ESP32 Arduino framework](https://github.com/espressif/arduino-esp32)  
-- Async Web Server for dashboard  
-- Minimal dependencies for quick setup  
+# Disclaimer
+This project is a proof of concept for testing and educational purposes.
+Neither the ESP32, nor its SDK was meant or built for such purposes. Bugs can occur!
 
-## Setup
-1. Flash the firmware to your ESP32 using PlatformIO or Arduino IDE.  
-2. Connect to the Pine32 WiFi network.  
-3. Open the dashboard in your browser at `192.168.4.1`.  
+Use it only against your own networks and devices!
+Please check the legal regulations in your country before using it.
+We don't take any responsibility for what you do with this program.
 

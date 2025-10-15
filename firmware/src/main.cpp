@@ -6,13 +6,13 @@
 #include <ArduinoJson.h>
 
 AsyncWebServer server(80);
-String rootPassword = "admin"; // default
+String rootPassword = "pine32"; // default
 
 void setup() {
   Serial.begin(115200);
 
   // Start AP
-  WiFi.softAP("PicoPine", "12345678");
+  WiFi.softAP("Pine32", "disconnected");
 
   // Mount filesystem
   if (!LittleFS.begin(true)) {  // 'true' formats if mount fails
