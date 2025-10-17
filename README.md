@@ -9,7 +9,7 @@ It is designed for WiFi auditing, pentesting, and network experiments.
 > ⚠️ **Work in Progress** — development is ongoing.
 
 ## Password
-The wifi password for `Pine32` is `disconnected`
+The wifi password for `Pine32` is `disconnected` <br>
 Login Password for `root` is `pine32`
 
 ## Features (Planned)
