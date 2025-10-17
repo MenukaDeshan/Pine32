@@ -1,64 +1,74 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
-#include <FS.h>
-#include <LittleFS.h>       // Make sure to include built-in LittleFS
-#include <ArduinoJson.h>
+#include <LittleFS.h>
+#include "webserver.h"
+#include "scan.h"
+#include "auth.h"
+#include "apcontrol.h"
+#include "ssidmanager.h"
 
 AsyncWebServer server(80);
-String rootPassword = "pine32"; // default
+
+String rootPassword = "pine32";
+String currentSSID = "Pine32";
+String currentPass = "disconnected";
+String currentSecurity = "wpa2";
+int currentChannel = 1;
+
+void startAccessPoint() {
+  if (currentSecurity == "open") {
+    WiFi.softAP(currentSSID.c_str(), nullptr, currentChannel);
+  } else {
+    WiFi.softAP(currentSSID.c_str(), currentPass.c_str(), currentChannel);
+  }
+  Serial.printf("📡 AP started: SSID=%s, PASS=%s, CH=%d\n",
+                currentSSID.c_str(), currentPass.c_str(), currentChannel);
+}
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("\n🚀 Starting Pine32 Firmware");
 
-  // Start AP
-  WiFi.softAP("Pine32", "disconnected");
+  startAccessPoint();
 
-  // Mount filesystem
-  if (!LittleFS.begin(true)) {  // 'true' formats if mount fails
-    Serial.println("LittleFS Mount Failed");
+  if (!LittleFS.begin(true)) {
+    Serial.println("❌ LittleFS mount failed!");
     return;
   }
 
-  // Load password from config.json
-  File configFile = LittleFS.open("/www/config.json", "r");
-  if (configFile) {
-    StaticJsonDocument<128> doc;
-    DeserializationError err = deserializeJson(doc, configFile);
-    if (!err && doc.containsKey("root_password")) {
-      rootPassword = doc["root_password"].as<String>();
-    }
-    configFile.close();
-  } else {
-    Serial.println("Config file not found");
-  }
+  // ✅ REGISTER API ROUTES FIRST - This is the fix!
+  registerLoginRoutes(server, rootPassword);
+  registerScanRoutes(server);
+  registerAPControlRoutes(server, currentSSID, currentPass, currentSecurity, currentChannel);
+  registerSSIDRoutes(server);
 
-  // Serve static files
+  // ✅ Serve web interface AFTER API routes
   server.serveStatic("/", LittleFS, "/www/").setDefaultFile("login.html");
 
-  // Login handler
-  server.on("/login", HTTP_POST, [](AsyncWebServerRequest *request) {
-    if (request->hasParam("password", true)) {
-      String pw = request->getParam("password", true)->value();
-      if (pw == rootPassword) {
-        request->send(200, "text/plain", "OK");  // login success
-      } else {
-        request->send(401, "text/plain", "Invalid password");
-      }
+  // Optional: Add a catch-all handler for SPA routing
+  server.onNotFound([](AsyncWebServerRequest *request) {
+    // If it's an API call that doesn't exist
+    if (request->url().startsWith("/api/") || 
+        request->url().startsWith("/scan") ||
+        request->url().startsWith("/ap/") ||
+        request->url().startsWith("/ssid/")) {
+      request->send(404, "application/json", "{\"error\":\"Endpoint not found\"}");
     } else {
-      request->send(400, "text/plain", "Missing password");
+      // For all other routes, serve the main page (SPA support)
+      request->send(LittleFS, "/www/login.html", "text/html");
     }
-  });
-
-  // Logout handler
-  server.on("/logout", HTTP_POST, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", "OK");
   });
 
   server.begin();
-  Serial.println("✅ PicoPine Server Started: http://192.168.4.1");
+  Serial.println("✅ Pine32 Web Server started at http://192.168.4.1");
+  Serial.println("✅ API routes registered:");
+  Serial.println("   - /scan");
+  Serial.println("   - /scan/results");
+  Serial.println("   - /ap/*");
+  Serial.println("   - /ssid/*");
 }
 
 void loop() {
-  // nothing here for AsyncWebServer
+  // AsyncWebServer is event-driven, no loop code needed
 }

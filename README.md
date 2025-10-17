@@ -9,9 +9,13 @@ It is designed for WiFi auditing, pentesting, and network experiments.
 > ⚠️ **Work in Progress** — development is ongoing.
 
 ## Password
-The password for `Pine32` is `disconnected`
+The wifi password for `Pine32` is `disconnected`
+Login Password for `root` is `pine32`
 
 ## Features (Planned)
+- SSIDs Making and Cloning Selected APs
+
+## Features (Working)
 - WiFi scanning and monitoring   
 
 ## About this Project

@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pine32 — Dashboard</title>
+  <style>
+    :root{
+      --bg:#0f1115; --card:#111827; --muted:#9ca3af; --accent:#06b6d4; --panel:#1f2937;
+      --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#e5e7eb;margin:0;min-height:100vh;display:flex}
+    .sidebar{width:220px;background:#0b1220;padding:16px;display:flex;flex-direction:column;gap:12px;border-right:1px solid rgba(255,255,255,0.02)}
+    .logo{font-weight:700;font-size:18px;color:var(--accent);text-align:center}
+    .nav{display:flex;flex-direction:column;gap:6px}
+    .nav button{background:none;border:0;color:var(--muted);text-align:left;padding:10px;border-radius:6px;cursor:pointer}
+    .nav button:hover{background:var(--panel);color:#fff}
+    .main{flex:1;display:flex;flex-direction:column}
+    header{background:var(--panel);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #374151}
+    header h1{margin:0;font-size:18px;color:var(--accent)}
+    .dot-button{background:none;border:none;font-size:20px;color:var(--accent);cursor:pointer;padding:6px;border-radius:6px}
+    .content{flex:1;padding:20px;overflow:auto}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+    .top-tabs{display:flex;gap:8px;margin-bottom:12px}
+    .top-tabs button{background:none;border:0;padding:8px 12px;border-radius:8px;color:var(--muted);cursor:pointer}
+    .top-tabs button.active{background:#0b1720;color:#fff;border:1px solid rgba(255,255,255,0.03)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    table{width:100%;border-collapse:collapse;color:#e5e7eb}
+    th,td{padding:8px;border-bottom:1px solid #374151;text-align:left}
+    th{color:var(--muted);font-size:13px}
+    .small{font-size:13px;color:var(--muted)}
+    .muted{color:var(--muted)}
+    .btn{background:var(--accent);border:none;color:#052024;padding:8px 10px;border-radius:8px;cursor:pointer}
+    .btn.ghost{background:none;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+    .warning{background:#2b0b0b;padding:12px;border-radius:8px;border:1px solid rgba(255,80,80,0.1);color:#ffd6d6}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999}
+    .modal{background:var(--card);padding:18px;border-radius:10px;max-width:520px;width:100%;box-shadow:0 12px 50px rgba(0,0,0,0.6)}
+    .row{display:flex;gap:8px;align-items:center}
+    .input{background:#0b1220;border:1px solid rgba(255,255,255,0.02);padding:8px;border-radius:8px;color:#e5e7eb;width:100%}
+    .muted-small{color:var(--muted);font-size:13px}
+    .pill{padding:6px 10px;border-radius:999px;background:#081218;border:1px solid rgba(255,255,255,0.02);font-size:13px}
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="logo">📡 Pine32</div>
+    <div class="nav">
+      <button onclick="loadPage('dashboard')">Dashboard</button>
+      <button onclick="loadPage('picoap')">PicoAP Suite</button>
+      <button onclick="loadPage('recon')">Recon</button>
+      <button onclick="loadPage('logs')">Log</button>
+      <button onclick="loadPage('settings')">Settings</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header>
+      <h1 id="pageTitle">Dashboard</h1>
+      <div>
+        <button class="dot-button" onclick="togglePopup()">⋮</button>
+        <div id="popupMenu" style="display:none;position:absolute;right:24px;top:56px;background:var(--panel);border-radius:8px;border:1px solid rgba(255,255,255,0.03);overflow:hidden">
+          <button onclick="loadPage('profile')" style="display:block;padding:10px;border:0;background:none;color:#e5e7eb;width:220px;text-align:left">Profile</button>
+          <button onclick="loadPage('settings')" style="display:block;padding:10px;border:0;background:none;color:#e5e7eb;width:220px;text-align:left">Settings</button>
+          <button onclick="logout()" style="display:block;padding:10px;border:0;background:none;color:#e5e7eb;width:220px;text-align:left">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <div class="content" id="content">
+      <!-- default dashboard content -->
+      <div class="card">
+        <h2>Pine32 Dashboard</h2>
+        <p class="small">Use the left menu to open modules. Click <b>PicoAP Suite</b> for Wi-Fi tooling.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal skeleton (hidden) -->
+  <div id="modalRoot" style="display:none"></div>
+
+  <script>
+    // ==== Utilities ====
+    function togglePopup(){
+      const m = document.getElementById('popupMenu');
+      m.style.display = m.style.display === 'block' ? 'none' : 'block';
+    }
+    window.addEventListener('click', (e)=> {
+      const menu = document.getElementById('popupMenu');
+      const btn = document.querySelector('.dot-button');
+      if (!menu.contains(e.target) && !btn.contains(e.target)) menu.style.display = 'none';
+    });
+
+    function setTitle(t){ document.getElementById('pageTitle').textContent = t; }
+
+    // Simple modal helper
+    function showModal(html){
+      const root = document.getElementById('modalRoot');
+      root.innerHTML = `
+        <div class="modal-backdrop" onclick="closeModal(event)">
+          <div class="modal" onclick="event.stopPropagation()">${html}</div>
+        </div>
+      `;
+      root.style.display = 'block';
+    }
+    function closeModal(e){
+      if (e) e.stopPropagation();
+      document.getElementById('modalRoot').style.display = 'none';
+      document.getElementById('modalRoot').innerHTML = '';
+    }
+
+    // ==== Page loader ====
+    const modules = {
+      dashboard: renderHome,
+      picoap: renderPicoAP,
+      recon: renderRecon,
+      logs: renderLogs,
+      settings: renderSettings,
+      profile: renderProfile
+    };
+
+    function loadPage(name){
+      setTitle(name.charAt(0).toUpperCase() + name.slice(1));
+      const content = document.getElementById('content');
+      if (modules[name]) {
+        content.innerHTML = modules[name]();
+        // run any attach code
+        if (name === 'picoap') attachPicoAP();
+      } else {
+        content.innerHTML = `<div class="card"><p>Module "${name}" not found.</p></div>`;
+      }
+    }
+
+    // ==== Pages ====
+    function renderHome(){
+      return `
+        <div class="card">
+          <h2>Pine32 Dashboard</h2>
+          <p class="small">Overview of device status and recent activity.</p>
+          <div style="margin-top:12px" id="homeOverview">
+            <div class="grid">
+              <div class="card"><h3 id="homeSSIDs">SSIDs: —</h3><p class="muted-small">Total SSIDs detected (last scan)</p></div>
+              <div class="card"><h3 id="homeClients">Clients: —</h3><p class="muted-small">Connected clients</p></div>
+              <div class="card"><h3 id="homeUptime">Uptime: —</h3><p class="muted-small">System uptime (from device)</p></div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPicoAP(){
+      return `
+      <div>
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h2 style="margin:0">📡 PicoAP Suite</h2>
+              <p class="small">Wi-Fi tools: scan, client view, SSID management, access point control.</p>
+            </div>
+            <div>
+              <button class="btn" onclick="triggerScan()">Scan Wi-Fi</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px" id="picoapSummary" class="small muted-small">
+            Last scan: <span id="lastScanTime">never</span>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:12px">
+          <div class="top-tabs" id="picoTopTabs">
+            <button class="active" data-tab="pineap" onclick="switchPicoTab(event)">PineAP</button>
+            <button data-tab="clients" onclick="switchPicoTab(event)">Clients</button>
+            <button data-tab="ssids" onclick="switchPicoTab(event)">SSIDs</button>
+            <button data-tab="attack" onclick="switchPicoTab(event)">Attack</button>
+            <button data-tab="ap" onclick="switchPicoTab(event)">Access Point</button>
+          </div>
+
+          <div id="picoTabContent">
+            <!-- PineAP tab content (default) -->
+            <div id="tab_pineap">
+              <div class="grid">
+                <div class="card">
+                  <h3 id="pine_total_ssids">SSIDs: —</h3>
+                  <p class="muted-small">Total unique SSIDs from last scan</p>
+                </div>
+                <div class="card">
+                  <h3 id="pine_connected_clients">Clients: —</h3>
+                  <p class="muted-small">Clients seen (via /clients)</p>
+                </div>
+                <div class="card">
+                  <h3 id="pine_uptime">Uptime: —</h3>
+                  <p class="muted-small">System uptime</p>
+                </div>
+              </div>
+
+              <div style="margin-top:12px">
+                <h4>Recent activity</h4>
+                <ul id="pineRecent">
+                  <li class="muted-small">No recent activity yet.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Clients -->
+            <div id="tab_clients" style="display:none">
+              <h4>Connected Clients</h4>
+              <div id="clientsContainer" class="card">
+                <p class="muted-small">Loading clients…</p>
+              </div>
+            </div>
+
+            <!-- SSIDs -->
+            <div id="tab_ssids" style="display:none">
+              <h4>SSID Generator</h4>
+              <div class="card">
+                <p class="small">Use this tool to create multiple Access Points with the same SSID name.  
+                The backend must implement <code>/ssid/create</code> to handle generation.</p>
+
+                <form id="ssidForm" onsubmit="createSSIDs(event)">
+                  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+                    <label style="flex:1;min-width:200px">
+                      <span class="muted-small">SSID Name:</span>
+                      <input class="input" id="ssid_name" placeholder="Enter SSID (e.g., Pine32-Test)" required />
+                    </label>
+
+                    <label style="display:flex;align-items:center;gap:6px;color:var(--muted)">
+                      <input type="radio" name="ssid_security" value="open" checked /> Open
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;color:var(--muted)">
+                      <input type="radio" name="ssid_security" value="wpa2" /> WPA2 Enabled
+                    </label>
+
+                    <label style="flex:0 0 140px">
+                      <span class="muted-small"># of APs:</span>
+                      <input class="input" id="ssid_count" type="number" min="1" max="50" value="1" />
+                    </label>
+
+                    <button class="btn" type="submit">Create SSIDs</button>
+                  </div>
+                </form>
+
+                <div id="ssidResult" class="muted-small" style="margin-top:8px">No SSIDs created yet.</div>
+              </div>
+
+              <div class="card" style="margin-top:12px">
+                <h4>Generated SSID List</h4>
+                <div id="ssidListContainer">
+                  <p class="muted-small">No SSIDs generated. Fill the form above to create.</p>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Attack (SIMULATION ONLY) -->
+            <div id="tab_attack" style="display:none">
+              <h4>Attack Simulator (Safe)</h4>
+              <div class="warning">
+                <strong>Important:</strong> This interface is a <em>simulation only</em>. I cannot and will not help perform real deauthentication, probe flooding, or other disruptive attacks.
+                Use simulations for testing UI/UX or training only.
+              </div>
+              <div style="margin-top:12px" class="card">
+                <p class="small">Select a target SSID or client in the SSIDs/Clients tab, then choose a simulated action here.</p>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <select id="sim_action" class="input" style="max-width:220px">
+                    <option value="probe">Probe (simulate)</option>
+                    <option value="deauth">Deauth (simulate)</option>
+                  </select>
+                  <button class="btn" onclick="runSimulation()">Run Simulation</button>
+                  <button class="btn ghost" disabled title="Disabled for safety">Execute (disabled)</button>
+                </div>
+                <div id="simOutput" style="margin-top:12px" class="muted-small">No simulation run yet.</div>
+              </div>
+            </div>
+
+            <!-- Access Point -->
+            <!-- Access Point -->
+            <div id="tab_ap" style="display:none">
+              <h4>Access Point Management</h4>
+
+              <!-- 1) Create / Edit AP (original form) -->
+              <div class="card" style="margin-bottom:12px">
+                <p class="small">Create or edit an AP (Open/WPA). Submitting the form posts to <code>/ap/create</code>. Your server firmware must implement this endpoint to actually create the AP.</p>
+
+                <form id="apFormCreate" onsubmit="createAP(event)">
+                  <div style="display:flex;gap:8px;margin-bottom:8px">
+                    <input class="input" id="ap_ssid_create" placeholder="SSID (e.g., Pine32-Guest)" required />
+                    <select class="input" id="ap_security_create">
+                      <option value="open">Open</option>
+                      <option value="wpa2">WPA2-PSK</option>
+                    </select>
+                  </div>
+
+                  <div style="display:flex;gap:8px;margin-bottom:8px">
+                    <input class="input" id="ap_password_create" placeholder="Password (if WPA2)" />
+                    <input class="input" id="ap_channel_create" placeholder="Channel (1-11)" type="number" min="1" max="165" />
+                  </div>
+
+                  <div style="display:flex;gap:8px">
+                    <button class="btn" type="submit">Create / Update AP</button>
+                    <button class="btn ghost" type="button" onclick="stopAP('create')">Stop AP</button>
+                  </div>
+
+                  <div id="apResultCreate" class="muted-small" style="margin-top:8px"></div>
+                </form>
+              </div>
+
+              <!-- 2) Device's own AP (Pine32) management -->
+              <div class="card">
+                <p class="small">Manage the device's own Access Point (the SSID the ESP32 creates). Current AP: <span id="currentApName">—</span></p>
+
+                <form id="apFormDevice" onsubmit="updateAP(event)">
+                  <div style="display:flex;gap:8px;margin-bottom:8px">
+                    <input class="input" id="ap_ssid_device" placeholder="Device AP SSID (e.g., Pine32)" required />
+                    <select class="input" id="ap_security_device">
+                      <option value="open">Open</option>
+                      <option value="wpa2">WPA2-PSK</option>
+                    </select>
+                  </div>
+
+                  <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+                    <input class="input" id="ap_password_device" placeholder="Password (if WPA2)" type="password" />
+                    <label style="display:flex;align-items:center;gap:6px;color:var(--muted)">
+                      <input type="checkbox" id="ap_show_pwd_device" onchange="togglePwd('device')"> Show
+                    </label>
+                    <input class="input" id="ap_channel_device" placeholder="Channel (1-11)" type="number" min="1" max="165" style="max-width:120px" />
+                  </div>
+
+                  <div style="display:flex;gap:8px">
+                    <button class="btn" id="apApplyBtnDevice" type="submit">Apply (Update Device AP)</button>
+                    <button class="btn ghost" type="button" onclick="stopAP('device')">Stop Device AP</button>
+                    <button class="btn ghost" type="button" onclick="resetAPForm('device')">Reset</button>
+                  </div>
+
+                  <div id="apResultDevice" class="muted-small" style="margin-top:8px"></div>
+                </form>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      `;
+    }
+
+    function renderRecon(){
+      return `<div class="card"><h2>Recon Module</h2><p class="small">Passive recon UI and logs.</p></div>`;
+    }
+    function renderLogs(){
+      return `<div class="card"><h2>Logs</h2><p class="small">Event logs (local)</p></div>`;
+    }
+    function renderSettings(){
+      return `<div class="card"><h2>Settings</h2><p class="small">Device and module settings.</p></div>`;
+    }
+    function renderProfile(){
+      return `<div class="card"><h2>Profile</h2><p class="small">Admin profile</p></div>`;
+    }
+
+    // ==== PicoAP attach behavior ====
+    let lastScanResults = [];
+    let lastScanTime = null;
+    function attachPicoAP(){
+      // initialize summary from existing scan
+      updatePineSummary();
+      // load clients (try)
+      loadClients();
+      // set default tab
+      showPicoTab('pineap');
+    }
+
+    function switchPicoTab(e){
+      const btn = e.currentTarget;
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('#picoTopTabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      showPicoTab(tab);
+    }
+    function showPicoTab(name){
+      ['pineap','clients','ssids','attack','ap'].forEach(t=>{
+        const el = document.getElementById('tab_'+t);
+        if (el) el.style.display = t===name ? '' : 'none';
+      });
+    }
+
+    // ==== Scan integration (uses your /scan endpoint) ====
+    async function triggerScan(){
+      const btn = event?.currentTarget;
+      if (btn) { btn.disabled = true; btn.textContent = 'Scanning…'; }
+      try{
+        const res = await fetch('/scan');
+        if (!res.ok) throw new Error('scan failed');
+        const data = await res.json();
+        lastScanResults = Array.isArray(data) ? data : [];
+        lastScanTime = new Date();
+        document.getElementById('lastScanTime').textContent = lastScanTime.toLocaleString();
+        populateSSIDs();
+        updatePineSummary();
+      } catch(err){
+        alert('Scan error: ' + err);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Scan Wi-Fi'; }
+      }
+    }
+
+    function populateSSIDs(){
+      const cont = document.getElementById('ssidsContainer');
+      if (!cont) return;
+      if (!lastScanResults.length) {
+        cont.innerHTML = '<p class="muted-small">No SSIDs detected. Click <b>Scan Wi-Fi</b>.</p>';
+        return;
+      }
+      let html = `<table><thead><tr><th>SSID</th><th>RSSI</th><th>Channel</th><th>BSSID</th><th></th></tr></thead><tbody>`;
+      lastScanResults.forEach((ap, i) => {
+        html += `<tr>
+          <td>${escapeHtml(ap.ssid)}</td>
+          <td>${ap.rssi}</td>
+          <td>${ap.channel}</td>
+          <td>${ap.bssid}</td>
+          <td><button class="btn ghost" onclick="openPrepareAttack(${i})">Prepare</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      cont.innerHTML = html;
+    }
+
+    function updatePineSummary(){
+      const ssidCount = lastScanResults.length;
+      document.getElementById('pine_total_ssids').textContent = 'SSIDs: ' + ssidCount;
+      document.getElementById('pine_uptime').textContent = 'Uptime: —'; // backend can provide actual uptime
+      // clients count (if available)
+      fetch('/clients').then(r=>r.json()).then(cl=>{
+        if (Array.isArray(cl)) {
+          document.getElementById('pine_connected_clients').textContent = 'Clients: ' + cl.length;
+          document.getElementById('pineRecent').innerHTML = `<li class="muted-small">Loaded ${cl.length} clients.</li>`;
+        } else {
+          document.getElementById('pine_connected_clients').textContent = 'Clients: —';
+        }
+      }).catch(()=> {
+        document.getElementById('pine_connected_clients').textContent = 'Clients: —';
+      });
+
+      // Home overview too
+      document.getElementById('homeSSIDs')?.textContent && (document.getElementById('homeSSIDs').textContent = 'SSIDs: ' + ssidCount);
+      // clients for home
+      fetch('/clients').then(r=>r.json()).then(cl=>{
+        if (Array.isArray(cl)) document.getElementById('homeClients').textContent = 'Clients: ' + cl.length;
+      }).catch(()=>{});
+    }
+
+    // ==== Clients loader ====
+    async function loadClients(){
+      const cont = document.getElementById('clientsContainer');
+      if (!cont) return;
+      cont.innerHTML = '<p class="muted-small">Loading clients…</p>';
+      try {
+        const res = await fetch('/clients');
+        if (!res.ok) throw new Error('No clients endpoint');
+        const clients = await res.json();
+        if (!Array.isArray(clients) || !clients.length) {
+          cont.innerHTML = '<p class="muted-small">No clients currently connected or endpoint returned empty list.</p>';
+          return;
+        }
+        let html = `<table><thead><tr><th>MAC</th><th>Associated SSID</th><th>Last seen</th><th></th></tr></thead><tbody>`;
+        clients.forEach((c, i) => {
+          html += `<tr>
+            <td>${escapeHtml(c.mac||'—')}</td>
+            <td>${escapeHtml(c.ssid||'—')}</td>
+            <td>${escapeHtml(c.last_seen||'—')}</td>
+            <td><button class="btn ghost" onclick="viewClient(${i})">View</button></td>
+          </tr>`;
+        });
+        html += `</tbody></table>`;
+        cont.innerHTML = html;
+      } catch(e){
+        cont.innerHTML = '<p class="muted-small">Clients endpoint not available. Implement <code>/clients</code> on the device to return JSON list of clients.</p>';
+      }
+    }
+
+    function viewClient(idx){
+      // safe client inspection modal
+      fetch('/clients').then(r=>r.json()).then(cl=>{
+        const c = cl[idx];
+        showModal(`<h3>Client — ${escapeHtml(c.mac||'unknown')}</h3>
+          <p class="muted-small">Associated SSID: ${escapeHtml(c.ssid||'—')}</p>
+          <p class="muted-small">Last seen: ${escapeHtml(c.last_seen||'—')}</p>
+          <div style="margin-top:12px"><button class="btn" onclick="closeModal()">Close</button></div>
+        `);
+      }).catch(()=>alert('Failed to load client details'));
+    }
+
+    // ==== Prepare Attack (SIMULATION ONLY) ====
+    function openPrepareAttack(idx){
+      const ap = lastScanResults[idx];
+      if (!ap) return alert('AP not found');
+      showModal(`<h3>Prepare action: ${escapeHtml(ap.ssid)}</h3>
+        <p class="muted-small">BSSID: ${escapeHtml(ap.bssid)} • RSSI: ${ap.rssi}</p>
+        <div class="warning" style="margin-top:8px">
+          This is a <strong>simulation only</strong>. I will not provide or run real deauthentication or disruptive attack code.
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <select id="prep_action" class="input">
+            <option value="probe">Probe request simulation</option>
+            <option value="deauth">Deauth simulation</option>
+          </select>
+          <button class="btn" onclick="runPreparedSim(${idx})">Simulate</button>
+          <button class="btn ghost" onclick="closeModal()">Close</button>
+        </div>
+        <div id="prepOut" class="muted-small" style="margin-top:10px"></div>
+      `);
+    }
+
+    function runPreparedSim(idx){
+      const action = document.getElementById('prep_action').value;
+      const ap = lastScanResults[idx];
+      const out = document.getElementById('prepOut');
+      out.textContent = `Running simulation "${action}" against ${ap.ssid} (${ap.bssid})...`;
+      // fake progress
+      let step = 0;
+      const iv = setInterval(()=>{
+        step++;
+        out.textContent = `Simulation "${action}": ${step*20}%`;
+        if (step >= 5) {
+          clearInterval(iv);
+          out.textContent = `Simulation completed. No network actions were performed. Use this UI for demo/testing only.`;
+        }
+      }, 400);
+    }
+    // ==== SSID GENERATOR ====
+    async function createSSIDs(e) {
+      e.preventDefault();
+      const name = document.getElementById('ssid_name').value.trim();
+      const count = parseInt(document.getElementById('ssid_count').value, 10);
+      const security = document.querySelector('input[name="ssid_security"]:checked').value;
+      const resDiv = document.getElementById('ssidResult');
+      const listDiv = document.getElementById('ssidListContainer');
+
+      if (!name) return alert('SSID name is required.');
+      if (count < 1 || count > 50) return alert('Enter a valid number of APs (1–50).');
+
+      resDiv.textContent = 'Sending SSID creation request…';
+
+      try {
+        const r = await fetch('/ssid/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, count, security })
+        });
+
+        if (!r.ok) {
+          const txt = await r.text().catch(() => r.statusText);
+          resDiv.textContent = 'Error: ' + txt;
+          return;
+        }
+
+        const j = await r.json().catch(() => null);
+        resDiv.textContent = 'Request sent. Device response: ' + (j?.msg || 'OK');
+
+        // Generate preview list locally for UI
+        let html = '<table><thead><tr><th>#</th><th>SSID Name</th><th>Security</th></tr></thead><tbody>';
+        for (let i = 1; i <= count; i++) {
+          html += `<tr><td>${i}</td><td>${escapeHtml(name)}</td><td>${security.toUpperCase()}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        listDiv.innerHTML = html;
+
+      } catch (err) {
+        resDiv.textContent = 'Failed to contact device. Implement /ssid/create in firmware.';
+      }
+    }
+
+    // ==== Attack simulator ====
+    function runSimulation(){
+      const a = document.getElementById('sim_action').value;
+      const out = document.getElementById('simOutput');
+      out.textContent = `Simulating ${a}...`;
+      let p = 0;
+      const t = setInterval(()=> {
+        p += 20;
+        out.textContent = `Simulating ${a}: ${p}%`;
+        if (p >= 100) {
+          clearInterval(t);
+          out.textContent = `Simulation complete — this was a safe demo only.`;
+        }
+      }, 350);
+    }
+
+    // ==== AP management (posts to /ap/create) ====
+   // -----------------------------
+// Access Point: Create / Device
+// -----------------------------
+
+// --------- CREATE /ap/create ----------
+    async function createAP(e) {
+      e.preventDefault();
+      const ssid = document.getElementById('ap_ssid_create').value.trim();
+      const security = document.getElementById('ap_security_create').value;
+      const password = document.getElementById('ap_password_create').value;
+      const channel = document.getElementById('ap_channel_create').value || '1';
+      const resDiv = document.getElementById('apResultCreate');
+      const btn = e.submitter || null;
+
+      if (!ssid) return alert('SSID required');
+      if (security === 'wpa2' && (!password || password.length < 8)) {
+        return alert('WPA2 requires a password of at least 8 characters.');
+      }
+
+      if (btn) btn.disabled = true;
+      resDiv.textContent = 'Sending create request…';
+
+      try {
+        const r = await fetch('/ap/create', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ ssid, security, password, channel })
+        });
+
+        if (!r.ok) {
+          const txt = await r.text().catch(() => r.statusText);
+          resDiv.textContent = 'Error: ' + txt;
+        } else {
+          const j = await r.json().catch(() => null);
+          resDiv.textContent = 'AP create request submitted. Device response: ' + (j?.msg || 'OK');
+          // Optionally clear the create form password
+          document.getElementById('ap_password_create').value = '';
+        }
+      } catch (err) {
+        resDiv.textContent = 'Failed to contact device. Implement POST /ap/create in firmware.';
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // --------- DEVICE AP status & update (/ap/status, /ap/update) ----------
+    async function loadAPStatus() {
+      const resDiv = document.getElementById('apResultDevice');
+      resDiv.textContent = 'Loading AP status…';
+      try {
+        const r = await fetch('/ap/status');
+        if (!r.ok) throw new Error('No /ap/status');
+        const s = await r.json(); // expected: { ssid, security, channel }
+        document.getElementById('currentApName').textContent = s.ssid || '—';
+        document.getElementById('ap_ssid_device').value = s.ssid || '';
+        document.getElementById('ap_security_device').value = s.security || 'open';
+        document.getElementById('ap_channel_device').value = s.channel || '';
+        // Do NOT populate password for security reasons.
+        document.getElementById('ap_password_device').value = '';
+        resDiv.textContent = 'Loaded AP settings.';
+      } catch (err) {
+        resDiv.textContent = 'Unable to load AP status. Device must implement GET /ap/status.';
+      }
+    }
+
+    async function updateAP(e) {
+      e.preventDefault();
+      const ssid = document.getElementById('ap_ssid_device').value.trim();
+      const security = document.getElementById('ap_security_device').value;
+      const password = document.getElementById('ap_password_device').value;
+      const channel = document.getElementById('ap_channel_device').value || '1';
+      const resDiv = document.getElementById('apResultDevice');
+      const btn = document.getElementById('apApplyBtnDevice');
+
+      if (!ssid) return alert('SSID required');
+      if (security === 'wpa2' && (!password || password.length < 8)) {
+        return alert('WPA2 requires a password of at least 8 characters.');
+      }
+
+      btn.disabled = true;
+      resDiv.textContent = 'Applying AP settings…';
+
+      try {
+        const r = await fetch('/ap/update', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ ssid, security, password, channel })
+        });
+        if (!r.ok) {
+          const txt = await r.text().catch(() => r.statusText);
+          resDiv.textContent = 'Error: ' + txt;
+        } else {
+          const j = await r.json().catch(() => null);
+          resDiv.textContent = 'AP updated. Device response: ' + (j?.msg || 'OK');
+          document.getElementById('currentApName').textContent = ssid;
+          // clear password field for safety
+          document.getElementById('ap_password_device').value = '';
+        }
+      } catch (err) {
+        resDiv.textContent = 'Failed to contact device. Implement POST /ap/update in firmware.';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ---------- STOP AP (shared) ----------
+    async function stopAP(kind = 'device') {
+      // kind: 'device' or 'create' - both call same endpoint; backend decides which AP to stop.
+      if (!confirm('Stop Access Point on device? This will disable the device AP.')) return;
+      const targetDiv = kind === 'create' ? document.getElementById('apResultCreate') : document.getElementById('apResultDevice');
+      try {
+        const r = await fetch('/ap/stop', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ kind }) });
+        if (!r.ok) {
+          const txt = await r.text().catch(()=>r.statusText);
+          targetDiv.textContent = 'Stop AP failed: ' + txt;
+        } else {
+          const j = await r.json().catch(()=>null);
+          targetDiv.textContent = 'Stop request sent. Device response: ' + (j?.msg || 'stopped');
+          // reflect in UI
+          document.getElementById('currentApName').textContent = '—';
+        }
+      } catch (err) {
+        targetDiv.textContent = 'Request failed. /ap/stop not implemented.';
+      }
+    }
+
+    // ---------- Helpers ----------
+    function resetAPForm(kind = 'device') {
+      if (kind === 'device') {
+        loadAPStatus();
+      } else {
+        // clear create form to defaults
+        document.getElementById('apFormCreate').reset();
+        document.getElementById('apResultCreate').textContent = '';
+      }
+    }
+
+    function togglePwd(which = 'device') {
+      const id = which === 'device' ? 'ap_password_device' : 'ap_password_create';
+      const chk = which === 'device' ? document.getElementById('ap_show_pwd_device') : null;
+      const p = document.getElementById(id);
+      if (!p) return;
+      // for create form we don't have a checkbox; toggle based on argument (but default false)
+      if (which === 'device') {
+        p.type = (chk && chk.checked) ? 'text' : 'password';
+      } else {
+        // fallback: toggle manually if needed
+        p.type = p.type === 'password' ? 'text' : 'password';
+      }
+    }
+
+    // ==== Logout ====
+    function logout(){
+      fetch('/logout', {method:'POST'}).then(()=> location.href = '/login.html');
+    }
+
+    // ==== Init ====
+    // default landing
+    loadPage('dashboard');
+  </script>
+</body>
+</html>

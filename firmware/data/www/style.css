@@ -1,25 +1,437 @@
+/* ===============================
+   🌐 GLOBAL + DASHBOARD STYLES
+   =============================== */
+:root {
+  --bg: #0f1115;
+  --card: #111827;
+  --muted: #9ca3af;
+  --accent: #06b6d4;
+  --panel: #1f2937;
+  --glass: rgba(255, 255, 255, 0.03);
+}
+
+* { box-sizing: border-box; }
+
 body {
-  font-family: Arial, sans-serif;
-  background-color: #0b0b0b;
-  color: #00ffae;
+  font-family: system-ui, Segoe UI, Roboto, Arial;
+  background: var(--bg);
+  color: #e5e7eb;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: #0b1220;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-right: 1px solid rgba(255,255,255,0.02);
+}
+.logo {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent);
   text-align: center;
-  margin-top: 100px;
 }
-.login-box {
-  display: inline-block;
-  border: 2px solid #00ffae;
-  padding: 20px;
-  border-radius: 10px;
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-input, button {
-  margin-top: 10px;
-  padding: 8px;
-  width: 200px;
-  border: none;
-  border-radius: 5px;
-}
-button {
-  background-color: #00ffae;
-  color: #000;
+.nav button {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  text-align: left;
+  padding: 10px;
+  border-radius: 6px;
   cursor: pointer;
+}
+.nav button:hover {
+  background: var(--panel);
+  color: #fff;
+}
+
+/* Main container */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+header {
+  background: var(--panel);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #374151;
+}
+header h1 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--accent);
+}
+.dot-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+}
+.content {
+  flex: 1;
+  padding: 20px;
+  overflow: auto;
+}
+/* ===============================
+   🎯 POPUP MENU STYLES (Vertical like second image)
+   =============================== */
+.popup-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 8px;
+  padding: 8px 0;
+  min-width: 140px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  display: none;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.popup-menu button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  text-align: left;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  width: 100%;
+  border-radius: 0;
+  transition: all 0.2s ease;
+}
+
+.popup-menu button:hover {
+  background: var(--panel);
+  color: #fff;
+}
+/* Cards */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 6px 18px rgba(2,6,23,0.6);
+}
+
+/* Tabs */
+.top-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.top-tabs button {
+  background: none;
+  border: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.top-tabs button.active {
+  background: #0b1720;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* Tables, grids, inputs, etc */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #e5e7eb;
+}
+th, td {
+  padding: 8px;
+  border-bottom: 1px solid #374151;
+  text-align: left;
+}
+th {
+  color: var(--muted);
+  font-size: 13px;
+}
+.small { font-size: 13px; color: var(--muted); }
+.btn {
+  background: var(--accent);
+  border: none;
+  color: #052024;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn.ghost {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.04);
+  color: var(--muted);
+}
+.warning {
+  background: #2b0b0b;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,80,80,0.1);
+  color: #ffd6d6;
+}
+.input {
+  background: #0b1220;
+  border: 1px solid rgba(255,255,255,0.02);
+  padding: 8px;
+  border-radius: 8px;
+  color: #e5e7eb;
+  width: 100%;
+}
+.muted-small { color: var(--muted); font-size: 13px; }
+.pill {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #081218;
+  border: 1px solid rgba(255,255,255,0.02);
+  font-size: 13px;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal {
+  background: var(--card);
+  padding: 18px;
+  border-radius: 10px;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: 0 12px 50px rgba(0,0,0,0.6);
+}
+
+/* ===============================
+   🔐 LOGIN PAGE STYLES (Pine32 Unified)
+   =============================== */
+body.login-page {
+  font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+  background-color: #0f1115; /* same as dashboard background */
+  color: #e5e7eb;
+  text-align: center;
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box {
+  background: var(--card, #111827);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 28px 24px;
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+  width: 320px;
+  text-align: center;
+}
+
+.login-box h2 {
+  margin-bottom: 16px;
+  color: var(--accent, #06b6d4);
+  font-weight: 700;
+}
+
+.login-box input {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0 14px 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: #0b1220;
+  color: #e5e7eb;
+  font-size: 14px;
+  text-align: center;
+  outline: none;
+}
+
+.login-box input:focus {
+  border-color: var(--accent, #06b6d4);
+  box-shadow: 0 0 0 2px rgba(6,182,212,0.2);
+}
+
+.login-box button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--accent, #06b6d4);
+  color: #052024;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.login-box button:hover {
+  background-color: #0891b2;
+}
+
+.login-box p {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--muted, #9ca3af);
+}
+
+/* Scan table styles */
+.scan-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.scan-table th,
+.scan-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.scan-table th {
+  background-color: var(--card-bg);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+
+.scan-table tr.selected {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.scan-table .id { width: 50px; }
+.scan-table .ssid { width: 150px; }
+.scan-table .name { width: 120px; }
+.scan-table .ch { width: 50px; }
+.scan-table .rssi { width: 100px; }
+.scan-table .enc { width: 80px; }
+.scan-table .mac { width: 140px; }
+.scan-table .vendor { width: 120px; }
+.scan-table .select { width: 60px; }
+.scan-table .pkts { width: 60px; }
+.scan-table .ap { width: 120px; }
+.scan-table .actions { width: 100px; }
+
+/* Meter styles for RSSI */
+.meter_background {
+  background-color: #f0f0f0;
+  border-radius: 3px;
+  height: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.meter_foreground {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.meter_red { background-color: #ff4444; }
+.meter_orange { background-color: #ff8800; }
+.meter_green { background-color: #00c851; }
+
+.meter_value {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 12px;
+  font-weight: bold;
+  color: #000;
+  text-shadow: 0 0 2px #fff;
+}
+
+/* Button styles */
+.btn.small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px solid var(--border-color);
+}
+
+.btn.ghost.red {
+  color: #ff4444;
+  border-color: #ff4444;
+}
+
+.btn.ghost.red:hover {
+  background-color: #ff4444;
+  color: white;
+}
+
+/* Warning box */
+.warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  padding: 12px;
+  color: #856404;
+  margin: 12px 0;
+}
+/* Scan button states */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Scanning animation */
+.btn.scanning {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn.scanning::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: scanning 1.5s infinite;
+}
+
+@keyframes scanning {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Selected rows */
+.scan-table tr.selected {
+  background-color: rgba(76, 175, 80, 0.1) !important;
+}
+
+.scan-table tr.selected td {
+  border-left: 3px solid #4CAF50;
 }
